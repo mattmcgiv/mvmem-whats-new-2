@@ -35,6 +35,7 @@ $mvmem_whats_new_db_version = '0.1';
 //Register actions
 register_activation_hook( __FILE__, 'mvmem_whats_new_db_install' );
 add_action('publish_page','mvmem_whats_new_publish_post');
+add_action('wp_head','mvmem_whats_new_mark_read');
 
 function mvmem_whats_new_db_install() {//TODO: add similar comments table
 	global $wpdb;
@@ -92,13 +93,11 @@ function mvmem_whats_new_publish_post() {
 		$array = (array) $user;
 		$mvmem_user_ID = $array['ID'];
 		
+		//call func to write to db
 		mvmem_enqueue_whats_new($mvmem_user_ID, $mvmem_current_post_ID);
-		//add the post id to the database
 		
 	}
-	//if the table exists
-	//For each user
-		//add the userid and postid as a row to the $table_name = $wpdb->prefix . 'mvmem_whats_new_posts';
+	
 }
 
 function mvmem_whats_new_get_users() {
@@ -112,6 +111,10 @@ function mvmem_enqueue_whats_new ($userID, $postID) {
 	
 	$table_name = $wpdb->prefix . 'mvmem_whats_new_posts';
 	
+	//TODO:if the table exists
+	//For each user
+		//add the userid and postid as a row to the $table_name = $wpdb->prefix . 'mvmem_whats_new_posts';
+	
 	$wpdb->insert( 
 		$table_name, 
 		array( 
@@ -119,5 +122,29 @@ function mvmem_enqueue_whats_new ($userID, $postID) {
 			'postid' => $postID,
 		) 
 	);
+}
+
+function mvmem_whats_new_mark_read() {
+	global $wpdb;
+	$mvmem_whats_new_current_user = get_current_user_id();
+	$mvmem_whats_new_postid = url_to_postid( get_permalink() );
+	
+	$table_name = $wpdb->prefix . 'mvmem_whats_new_posts';
+	
+	//TODO:check if table exists before trying to delete from it
+	//remove entry for this user and page
+	$wpdb->query( 
+	$wpdb->prepare( 
+		"
+         DELETE FROM $table_name
+		 WHERE userid = %d
+		 AND postid = %d
+		",
+	        $mvmem_whats_new_current_user, $mvmem_whats_new_postid 
+        )
+	);
+	//var_dump($mvmem_whats_new_current_user . " viewed " . $mvmem_whats_new_postid); die();
+	
+	
 }
 
