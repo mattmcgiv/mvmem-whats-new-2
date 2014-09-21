@@ -38,7 +38,7 @@ add_action('publish_page','mvmem_whats_new_publish_post');
 add_action('wp_head','mvmem_whats_new_mark_post_read');
 add_action('wp_head','mvmem_whats_new_mark_comment_read');
 add_action('wp_insert_comment', 'mvmem_whats_new_post_comment',99,2);
-
+add_shortcode('mvmem-whats-new', 'mvmem_display_whats_new');
 
 function mvmem_whats_new_db_install() {//TODO: add similar comments table
 	global $wpdb;
@@ -242,10 +242,50 @@ function mvmem_whats_new_mark_comment_read() {
 	
 }
 
-function mvmem_whats_new_comment_approved($comment_id, $comment_object) {
+function mvmem_display_whats_new() {
+    global $wpdb;
+	$mvmem_whats_new_current_user = get_current_user_id();
+				
+
+	$mvmem_page_ids=$wpdb->get_results( 
+		$wpdb->prepare( 
+			"
+	        SELECT postid FROM wp_mvmem_whats_new_posts
+			WHERE userid = %d
+			",
+			$mvmem_whats_new_current_user
+	    )
+	);			
+			
+	echo '<h3>New Pages</h3>';
+	foreach ($mvmem_page_ids as $page_id) {
+		$mvmem_page_ID = $page_id->postid;
+		
+		
+		echo '<a href="' . get_permalink($mvmem_page_ID) . '">' . get_the_title($mvmem_page_ID) . '</a>'; 
+		
+		echo "<br>";
+
+	}
 	
-	$var = $comment_id;
+	$mvmem_comment_ids=$wpdb->get_results(
+		$wpdb->prepare(
+			"
+			SELECT commentid FROM wp_mvmem_whats_new_comments
+			WHERE userid =%d
+			",
+			$mvmem_whats_new_current_user
+		)
+	);
 	
-	var_dump($var); die();
+	foreach ($mvmem_comment_ids as $comment_id) {
+		echo '<h3>New Comments</h3>';
+		$mvmem_comment_ID = $comment_id->commentid;
+	
+		echo '<a href="' . comment_link() . '">' . get_the_title($mvmem_comment_ID) . '</a>'; 
+		
+		echo "<br>";
+	}
 }
+
 
