@@ -220,8 +220,7 @@ function mvmem_whats_new_mark_comment_read() {
 	
 	foreach ($mvmem_whats_new_comments_this_page as $comment) {
 		$array = (array) $comment;
-		$mvmem_comment_ID = $array['comment_ID'];
-
+		$mvmem_comment_ID = intval($array['comment_ID']);
 		//TODO:check if table exists before trying to delete from it
 		//remove entry for this user and page
 		$wpdb->query( 
@@ -229,18 +228,16 @@ function mvmem_whats_new_mark_comment_read() {
 			"
 	         DELETE FROM $table_name
 			 WHERE userid = %d
-			 AND commentid = %s
+			 AND commentid = %d
 			",
 		        $mvmem_whats_new_current_user, $mvmem_comment_ID 
 	        )
 		);
 
-	}
-	
-		//var_dump($mvmem_whats_new_current_user . " viewed " . $mvmem_whats_new_postid); die();
-	
-	
+	}	
 }
+
+
 
 function mvmem_display_whats_new() {
     global $wpdb;
@@ -264,7 +261,7 @@ function mvmem_display_whats_new() {
 		
 		echo '<a href="' . get_permalink($mvmem_page_ID) . '">' . get_the_title($mvmem_page_ID) . '</a>'; 
 		
-		echo "<br>";
+		echo "<br><hr>";
 
 	}
 	
@@ -277,14 +274,26 @@ function mvmem_display_whats_new() {
 			$mvmem_whats_new_current_user
 		)
 	);
-	
+	//var_dump($mvmem_comment_ids); die();
+	echo '<h3>New Comments</h3>';
 	foreach ($mvmem_comment_ids as $comment_id) {
-		echo '<h3>New Comments</h3>';
-		$mvmem_comment_ID = $comment_id->commentid;
-	
-		echo '<a href="' . comment_link() . '">' . get_the_title($mvmem_comment_ID) . '</a>'; 
 		
-		echo "<br>";
+		$mvmem_comment_ID = intval($comment_id->commentid);
+		//$mvmem_comment_ID = $comment_id->commentid;
+		//var_dump($mvmem_comment_ID);die;
+		
+		//$args=array('ID'=>$mvmem_comment_ID);
+		//$var=get_comments('ID='.$mvmem_comment_ID);
+		$comment = get_comment( $mvmem_comment_ID );
+
+ 
+		$mvmem_post_ID=$comment->comment_post_ID;
+		//var_dump($mvmem_post_ID); die();
+		
+		
+		echo get_comment_author($mvmem_comment_ID).' - <a href="'.get_permalink($mvmem_post_ID).'">"' . get_comment_text($mvmem_comment_ID) . '"</a><br>On page titled "' . get_the_title($mvmem_post_ID) . '"'; 
+		
+		echo "<br><hr>";
 	}
 }
 
