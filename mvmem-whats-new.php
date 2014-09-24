@@ -40,7 +40,7 @@ add_action('wp_head','mvmem_whats_new_mark_comment_read');
 add_action('wp_insert_comment', 'mvmem_whats_new_post_comment',99,2);
 add_shortcode('mvmem-whats-new', 'mvmem_display_whats_new');
 
-function mvmem_whats_new_db_install() {//TODO: add similar comments table
+function mvmem_whats_new_db_install() {
 	global $wpdb;
 	global $mvmem_whats_new_db_version;
 
@@ -62,6 +62,7 @@ function mvmem_whats_new_db_install() {//TODO: add similar comments table
 
 	if( $wpdb->get_var("SHOW TABLES LIKE '" . $table_name . "'") === $table_name ) {
 	 // The database table exists, do nothing
+	 //var_dump($table_name); die();
 	} else {
 	 // Table does not exist, so create it
 	 	$sql = "CREATE TABLE $table_name (
@@ -96,12 +97,17 @@ function mvmem_whats_new_db_install() {//TODO: add similar comments table
 function mvmem_whats_new_publish_post() {
 	//if there are users
 	//Get all users
+	global $wpdb;
+	$table_name = $wpdb->prefix . 'mvmem_whats_new_posts';
 	$mvmem_all_users = mvmem_whats_new_get_users();
 	
 	//Get postID
-	//TODO: if it is just an update, as opposed to a new post, ignore it
 	//get the post object
 	$mvmem_current_post = get_post();
+	
+	//TODO: if it is just an update, as opposed to a new post, ignore it
+
+	
 	
 	$mvmem_current_post_ID = $mvmem_current_post->ID;
 	
@@ -109,10 +115,18 @@ function mvmem_whats_new_publish_post() {
 		//get the user ID from the array and save it to a variable
 		$array = (array) $user;
 		$mvmem_user_ID = $array['ID'];
+		//$query="SELECT * FROM $table_name WHERE userid='$mvmem_user_ID' AND postid='$mvmem_current_post_ID'";
 		
-		//call func to write to db
-		mvmem_enqueue_whats_new($mvmem_user_ID, $mvmem_current_post_ID);
 		
+		
+		//Prevent update entries with this check		
+		if (($mvmem_current_post->post_date) === ($mvmem_current_post->post_modified)) {
+			var_dump($mvmem_current_post->post_date);
+			var_dump($mvmem_current_post->post_modified);
+			//die();
+			//call func to write to db
+			mvmem_enqueue_whats_new($mvmem_user_ID, $mvmem_current_post_ID);
+		}		
 	}
 	
 }
