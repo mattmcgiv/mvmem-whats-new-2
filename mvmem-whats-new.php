@@ -2,7 +2,7 @@
 
 /**
  * Plugin Name: MVMEM Whats New
- * Description: Each user sees new comments and posts since the last time he/she visited.
+ * Description: Each user sees new comments and pages since the last time he/she visited.
  * Version: 0.1
  * Author: Matt McGivney
  * Author URI: http://antym.com
@@ -122,10 +122,9 @@ function mvmem_whats_new_post_comment($comment_id, $comment_object) {
 	//if there are users
 	//Get all users
 	$mvmem_all_users = mvmem_whats_new_get_users();
-	
 	//Get commentID
 	//TODO: if it is just an update, as opposed to a new post, ignore it
-	//get the post object
+	//get the comment object
 	$mvmem_current_comment_ID = $comment_id;
 	
 	foreach ($mvmem_all_users as $user) {
@@ -141,8 +140,7 @@ function mvmem_whats_new_post_comment($comment_id, $comment_object) {
 }
 
 function mvmem_whats_new_get_users() {
- 	$mvmem_users = get_users(array('fields'=>array('ID')));
-	
+ 	$mvmem_users = get_users(array('fields'=>array('ID')));	
 	return $mvmem_users;
 }
 
@@ -208,19 +206,38 @@ function mvmem_whats_new_mark_post_read() {
 
 function mvmem_whats_new_mark_comment_read() {
 	global $wpdb;
-	$mvmem_whats_new_current_user = get_current_user_id();
+	global $post;
 	
+	$mvmem_whats_new_current_user = get_current_user_id();
+	//var_dump($mvmem_whats_new_current_user); die();
+	
+	$mvmem_whats_new_post_ID=$post->ID;
+	//var_dump($mvmem_whats_new_post_ID); die();
+	
+	//prepare an array with current postID
 	$mvmem_args = array(
-		'post_id' => url_to_postid(get_permalink()),
+		'post_id' => $mvmem_whats_new_post_ID,
 	);
 	
-	$mvmem_whats_new_comments_this_page=get_comments($mvmem_args);
+	//get comments for the current post id
+	//$mvmem_whats_new_comments_this_page=get_comments($mvmem_args);
+	$mvmem_comments_this_page=$wpdb->get_results( 
+		$wpdb->prepare( 
+			"
+	        SELECT comment_ID FROM wp_comments
+			WHERE comment_post_ID = %d
+			",
+			$mvmem_whats_new_post_ID
+	    )
+	);
 	
+	//var_dump($mvmem_comments_this_page); die();
 	$table_name = $wpdb->prefix . 'mvmem_whats_new_comments';
 	
-	foreach ($mvmem_whats_new_comments_this_page as $comment) {
+	foreach ($mvmem_comments_this_page as $comment) {
 		$array = (array) $comment;
 		$mvmem_comment_ID = intval($array['comment_ID']);
+		//var_dump($mvmem_comment_ID); die();
 		//TODO:check if table exists before trying to delete from it
 		//remove entry for this user and page
 		$wpdb->query( 
@@ -233,7 +250,6 @@ function mvmem_whats_new_mark_comment_read() {
 		        $mvmem_whats_new_current_user, $mvmem_comment_ID 
 	        )
 		);
-
 	}	
 }
 
